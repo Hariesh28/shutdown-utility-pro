@@ -15,6 +15,9 @@ internal static class RegressionTests
             TestSafeDefaults(testDirectory);
             TestConfigurationParsing(testDirectory);
             TestConfigurationPersistence(testDirectory);
+            TestInstallationDiagnostics(testDirectory);
+            TestCommandLineDelayParsing();
+            TestInteractiveLaunchDetection();
             TestPowerActionsAreSimulated();
             TestScheduleValidation();
             Console.WriteLine("PASS: " + Assertions + " assertions.");
@@ -121,6 +124,62 @@ internal static class RegressionTests
             Assert(simulated, action + " must be reported as simulated.");
             Assert(error == null, action + " simulation must not produce a Windows action error.");
         }
+    }
+
+    private static void TestCommandLineDelayParsing()
+    {
+        int seconds;
+        Assert(CommandLineParser.TryParseDelay("5", 1, 3600, out seconds) && seconds == 5,
+            "Valid countdown seconds must be accepted.");
+        Assert(CommandLineParser.TryParseDelay("604800", 1, 604800, out seconds) && seconds == 604800,
+            "The maximum scheduled delay must be accepted.");
+        Assert(!CommandLineParser.TryParseDelay("0", 1, 3600, out seconds),
+            "Zero-second countdowns must be rejected.");
+        Assert(!CommandLineParser.TryParseDelay("-1", 1, 3600, out seconds),
+            "Negative countdowns must be rejected instead of clamped.");
+        Assert(!CommandLineParser.TryParseDelay("+1", 1, 3600, out seconds),
+            "Signed delays must be rejected.");
+        Assert(!CommandLineParser.TryParseDelay("3601", 1, 3600, out seconds),
+            "Delays beyond the supported countdown limit must be rejected.");
+        Assert(!CommandLineParser.TryParseDelay("1.5", 1, 3600, out seconds),
+            "Fractional delays must be rejected.");
+        Assert(!CommandLineParser.TryParseDelay("1", 0, 3600, out seconds),
+            "Invalid delay bounds must be rejected.");
+    }
+
+    private static void TestInstallationDiagnostics(string directory)
+    {
+        string installDirectory = Path.Combine(directory, "install");
+        string userDataDirectory = Path.Combine(directory, "user-data");
+        Directory.CreateDirectory(installDirectory);
+        File.WriteAllText(Path.Combine(installDirectory, "Shutdown.exe"), "test executable");
+        new AppConfig().Save(Path.Combine(installDirectory, "Shutdown.config"));
+
+        string error;
+        Assert(InstallationDiagnostics.Run(installDirectory, userDataDirectory, out error),
+            "A package with its executable, safe seed configuration, and writable user-data directory should pass diagnostics.");
+        Assert(error == null, "Successful installation diagnostics must not return an error.");
+        Assert(Directory.GetFiles(userDataDirectory, ".self-test-*").Length == 0,
+            "Installation diagnostics must remove their temporary write probe.");
+
+        AppConfig unsafeSeed = new AppConfig();
+        unsafeSeed.TestMode = false;
+        unsafeSeed.Save(Path.Combine(installDirectory, "Shutdown.config"));
+        Assert(!InstallationDiagnostics.Run(installDirectory, userDataDirectory, out error),
+            "Installation diagnostics must reject a package that does not default to Test mode.");
+        Assert(!String.IsNullOrEmpty(error), "Failed installation diagnostics must explain the failure.");
+    }
+
+    private static void TestInteractiveLaunchDetection()
+    {
+        Assert(CommandLineParser.IsInteractiveLaunch(null), "A null argument list should open the dashboard.");
+        Assert(CommandLineParser.IsInteractiveLaunch(new string[0]), "No arguments should open the dashboard.");
+        Assert(CommandLineParser.IsInteractiveLaunch(new string[] { "/tray" }), "Tray launch should use the single-instance guard.");
+        Assert(CommandLineParser.IsInteractiveLaunch(new string[] { "/PANEL" }), "Panel launch should use the single-instance guard.");
+        Assert(!CommandLineParser.IsInteractiveLaunch(new string[] { "/tray", "extra" }), "Invalid tray arguments must reach command-line validation.");
+        Assert(!CommandLineParser.IsInteractiveLaunch(new string[] { "/cancel" }), "Cancel commands must run even when the dashboard is open.");
+        Assert(!CommandLineParser.IsInteractiveLaunch(new string[] { "/shutdown", "3" }), "Power commands must run independently of the dashboard instance.");
+        Assert(!CommandLineParser.IsInteractiveLaunch(new string[] { "/help" }), "Help should run independently of the dashboard instance.");
     }
 
     private static void TestScheduleValidation()

@@ -18,4 +18,6 @@ The project intentionally has no external package dependencies. `Build.cmd` buil
 
 ## Change expectations
 
-Keep changes focused, document user-visible changes, and run both `Build.cmd /nopause` and `tests\ShutdownUtility.Tests\RunTests.cmd`. Update `CHANGELOG.md` when behavior or user-facing features change. The current license permits personal use; do not assume contributions or distribution rights beyond its terms.
+Keep changes focused, document user-visible changes, and run both `Build.cmd /nopause` and `tests\ShutdownUtility.Tests\RunTests.cmd`. Update `CHANGELOG.md` when behavior or user-facing features change. The repository is licensed under the MIT License; see `LICENSE.txt` for the terms.
+
+Automated assistants must not be added as commit co-authors. In particular, do not add a `Co-authored-by: Copilot` trailer; CI rejects that attribution.

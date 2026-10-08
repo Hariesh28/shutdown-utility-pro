@@ -11,6 +11,9 @@ artifacts\Shutdown.exe /test-sound     Play configured shutdown sound
 artifacts\Shutdown.exe --test-mode /shutdown 3  Simulate a shutdown without affecting Windows
 artifacts\Shutdown.exe /help           Show command-line help
 
+Delay arguments must be whole seconds within the supported range. Zero, negative,
+fractional, and out-of-range values are rejected rather than adjusted.
+
 Native scheduled examples (run from PowerShell/CMD):
 artifacts\Shutdown.exe /tray
 Then use the tray menu to schedule shutdown/restart.

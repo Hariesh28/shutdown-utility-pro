@@ -10,7 +10,7 @@ if not exist "%CSC%" (
 )
 
 set "TEST_EXE=%TEMP%\ShutdownUtilityPro.Tests.%RANDOM%.exe"
-"%CSC%" /nologo /target:exe /optimize+ /checked+ /out:"%TEST_EXE%" /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll "tests\ShutdownUtility.Tests\RegressionTests.cs" "src\ShutdownUtility\AppConfig.cs" "src\ShutdownUtility\Logger.cs" "src\ShutdownUtility\WindowsServices.cs"
+"%CSC%" /nologo /target:exe /optimize+ /checked+ /out:"%TEST_EXE%" /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll "tests\ShutdownUtility.Tests\RegressionTests.cs" "src\ShutdownUtility\AppConfig.cs" "src\ShutdownUtility\CommandLineParser.cs" "src\ShutdownUtility\InstallationDiagnostics.cs" "src\ShutdownUtility\Logger.cs" "src\ShutdownUtility\WindowsServices.cs"
 if errorlevel 1 (
   if exist "%TEST_EXE%" del /q "%TEST_EXE%"
   exit /b 1

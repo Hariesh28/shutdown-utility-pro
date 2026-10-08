@@ -19,6 +19,41 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Reject Copilot co-author attribution
+        shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PATH: ${{ github.event_path }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          $event = Get-Content -LiteralPath $env:EVENT_PATH -Raw | ConvertFrom-Json
+          $base = $null
+          if ($env:EVENT_NAME -eq "pull_request") {
+            $base = $event.pull_request.base.sha
+          } elseif ($event.before -and $event.before -notmatch "^0+$") {
+            $base = $event.before
+          }
+
+          $range = $env:CURRENT_SHA
+          $baseExists = $false
+          if ($base) {
+            git cat-file -e "$base^{commit}" 2>$null
+            $baseExists = $LASTEXITCODE -eq 0
+          }
+          if ($baseExists) {
+            $range = "$base..$env:CURRENT_SHA"
+          }
+
+          $messages = git log --format=%B $range
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not inspect commit messages for co-author attribution."
+          }
+          if ($messages -match "(?im)^Co-authored-by:.*\bCopilot\b") {
+            throw "Do not add Copilot as a commit co-author in this repository."
+          }
 
       - name: Build application
         shell: cmd
@@ -30,7 +65,8 @@ jobs:
           $required = @(
             "artifacts\Shutdown.exe",
             "artifacts\Shutdown.config",
-            "artifacts\Shutdown.wav"
+            "artifacts\Shutdown.wav",
+            "artifacts\VerifyInstall.ps1"
           )
           foreach ($path in $required) {
             if (-not (Test-Path -LiteralPath $path)) {
@@ -40,6 +76,10 @@ jobs:
           if (-not (Select-String -Path "artifacts\Shutdown.config" -Pattern "^TestMode=true$" -Quiet)) {
             throw "The distributable configuration must default to Test mode."
           }
+
+      - name: Verify installed application
+        shell: pwsh
+        run: "& .\artifacts\VerifyInstall.ps1"
 
       - name: Run regression tests
         shell: cmd

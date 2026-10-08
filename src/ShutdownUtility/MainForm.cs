@@ -45,7 +45,7 @@ internal sealed class MainForm : Form
     {
         Text = "Shutdown Utility Pro";
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(800, 650);
+        MinimumSize = new Size(900, 650);
         ClientSize = new Size(920, 700);
         FormBorderStyle = FormBorderStyle.Sizable;
         Icon = AppResources.GetAppIcon();
@@ -54,45 +54,46 @@ internal sealed class MainForm : Form
 
         Panel header = new Panel();
         header.Dock = DockStyle.Top;
-        header.Height = 86;
+        header.Height = 94;
         header.BackColor = Color.FromArgb(30, 30, 34);
-        Controls.Add(header);
 
         Label title = new Label();
         title.Text = "Shutdown Utility Pro";
-        title.Font = new Font("Segoe UI Semibold", 22f, FontStyle.Bold);
-        title.Location = new Point(28, 12);
+        title.Font = new Font("Segoe UI Semibold", 20f, FontStyle.Bold);
+        title.Location = new Point(24, 9);
         title.AutoSize = true;
         header.Controls.Add(title);
 
         Label subtitle = new Label();
         ModeLabel = subtitle;
         UpdateModeIndicator();
-        subtitle.Font = new Font("Segoe UI", 10f);
-        subtitle.Location = new Point(31, 49);
+        subtitle.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
+        subtitle.Location = new Point(27, 55);
         subtitle.AutoSize = true;
         header.Controls.Add(subtitle);
 
-        Button hideButton = MakeButton("Hide to tray", 735, 23, 135, 38);
+        Button hideButton = MakeButton("Hide to tray", ClientSize.Width - 160, 26, 135, 36);
+        hideButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         hideButton.Click += delegate { HideToTray(true); };
         header.Controls.Add(hideButton);
 
         TableLayoutPanel root = new TableLayoutPanel();
         root.Dock = DockStyle.Fill;
-        root.Padding = new Padding(20);
+        root.Padding = new Padding(14);
         root.ColumnCount = 2;
         root.RowCount = 3;
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 54f));
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46f));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 40f));
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 58f));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 42f));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50f));
         Controls.Add(root);
+        Controls.Add(header);
 
         GroupBox actions = MakeGroup("Power actions");
         FlowLayoutPanel actionFlow = new FlowLayoutPanel();
         actionFlow.Dock = DockStyle.Fill;
-        actionFlow.Padding = new Padding(15);
+        actionFlow.Padding = new Padding(8);
         actionFlow.WrapContents = true;
         AddActionButton(actionFlow, "Shut down", PowerAction.Shutdown);
         AddActionButton(actionFlow, "Restart", PowerAction.Restart);
@@ -105,53 +106,79 @@ internal sealed class MainForm : Form
         GroupBox settings = MakeGroup("Countdown & sound");
         TableLayoutPanel st = new TableLayoutPanel();
         st.Dock = DockStyle.Fill;
-        st.Padding = new Padding(12);
+        st.Padding = new Padding(10);
         st.ColumnCount = 2;
         st.RowCount = 6;
-        st.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190f));
+        st.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130f));
         st.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        st.RowStyles.Add(new RowStyle(SizeType.Absolute, 34f));
+        st.RowStyles.Add(new RowStyle(SizeType.Absolute, 38f));
+        st.RowStyles.Add(new RowStyle(SizeType.Absolute, 24f));
+        st.RowStyles.Add(new RowStyle(SizeType.Absolute, 24f));
+        st.RowStyles.Add(new RowStyle(SizeType.Absolute, 24f));
+        st.RowStyles.Add(new RowStyle(SizeType.Absolute, 38f));
         AddLabel(st, "Countdown (seconds)", 0);
         CountdownBox = NewNumeric(1, 3600, 3);
         st.Controls.Add(CountdownBox, 1, 0);
         AddLabel(st, "Sound file", 1);
-        Panel soundPanel = new Panel(); soundPanel.Dock = DockStyle.Fill;
+        TableLayoutPanel soundPanel = new TableLayoutPanel();
+        soundPanel.Dock = DockStyle.Fill;
+        soundPanel.ColumnCount = 3;
+        soundPanel.RowCount = 1;
+        soundPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        soundPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 82f));
+        soundPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60f));
+        soundPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 34f));
         SoundPathBox = new TextBox(); SoundPathBox.Dock = DockStyle.Fill;
-        Button browseSound = MakeButton("Browse", 0, 0, 78, 28); browseSound.Dock = DockStyle.Right;
-        Button testSound = MakeButton("Test", 0, 0, 62, 28); testSound.Dock = DockStyle.Right; testSound.Margin = new Padding(0,0,82,0);
+        Button browseSound = MakeButton("Browse", 0, 0, 78, 28); browseSound.Dock = DockStyle.Fill;
+        Button testSound = MakeButton("Test", 0, 0, 56, 28); testSound.Dock = DockStyle.Fill;
         browseSound.Click += BrowseSound; testSound.Click += TestSound;
-        soundPanel.Controls.Add(SoundPathBox); soundPanel.Controls.Add(browseSound); soundPanel.Controls.Add(testSound);
+        soundPanel.Controls.Add(SoundPathBox, 0, 0);
+        soundPanel.Controls.Add(browseSound, 1, 0);
+        soundPanel.Controls.Add(testSound, 2, 0);
         st.Controls.Add(soundPanel, 1, 1);
         PlaySoundBox = NewCheck("Play sound", 2); st.Controls.Add(PlaySoundBox, 1, 2);
-        WaitSoundBox = NewCheck("Wait for sound to finish before countdown", 3); st.Controls.Add(WaitSoundBox, 1, 3);
+        WaitSoundBox = NewCheck("Wait for sound to finish", 3); st.Controls.Add(WaitSoundBox, 1, 3);
         NotificationBox = NewCheck("Show tray notifications", 4); st.Controls.Add(NotificationBox, 1, 4);
-        Label hint = new Label(); hint.Text = "Action-specific WAV files (Restart.wav, Sleep.wav, etc.) are used automatically when present."; hint.ForeColor = Color.Silver; hint.AutoSize = true; hint.MaximumSize = new Size(430, 50); st.Controls.Add(hint, 1, 5);
+        Label hint = new Label();
+        hint.Text = "Action-specific WAV files are used automatically when present.";
+        hint.ForeColor = Color.Silver;
+        hint.Dock = DockStyle.Fill;
+        st.Controls.Add(hint, 1, 5);
         settings.Controls.Add(st); root.Controls.Add(settings, 1, 0);
 
         GroupBox schedule = MakeGroup("Schedule shutdown / restart");
-        TableLayoutPanel sch = new TableLayoutPanel(); sch.Dock = DockStyle.Fill; sch.Padding = new Padding(12); sch.ColumnCount = 4;
-        sch.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90f)); sch.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140f)); sch.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120f)); sch.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        Label al = new Label(); al.Text = "Action"; al.AutoSize = true; sch.Controls.Add(al,0,0);
-        ScheduleActionBox = new ComboBox(); ScheduleActionBox.DropDownStyle = ComboBoxStyle.DropDownList; ScheduleActionBox.Items.Add("Shut down"); ScheduleActionBox.Items.Add("Restart"); ScheduleActionBox.SelectedIndex = 0; sch.Controls.Add(ScheduleActionBox,1,0);
-        Label dl = new Label(); dl.Text = "Minutes"; dl.AutoSize = true; sch.Controls.Add(dl,0,1);
-        ScheduleMinutesBox = NewNumeric(1, 10080, 10); sch.Controls.Add(ScheduleMinutesBox,1,1);
-        Button scheduleButton = MakeButton("Schedule", 0, 0, 105, 30); scheduleButton.Click += ScheduleAction; sch.Controls.Add(scheduleButton,2,0);
-        Button cancelScheduleButton = MakeButton("Cancel scheduled", 0, 0, 125, 30); cancelScheduleButton.Click += CancelScheduledAction; sch.Controls.Add(cancelScheduleButton,2,1);
-        Label schHint = new Label(); schHint.Text = "Uses Windows' native timer. You can cancel it from here or the tray."; schHint.ForeColor = Color.Silver; schHint.AutoSize = true; schHint.MaximumSize = new Size(320, 48); sch.Controls.Add(schHint,3,0); sch.SetRowSpan(schHint,2);
+        TableLayoutPanel sch = new TableLayoutPanel(); sch.Dock = DockStyle.Fill; sch.Padding = new Padding(8); sch.ColumnCount = 3; sch.RowCount = 3;
+        sch.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 80f)); sch.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 125f)); sch.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        sch.RowStyles.Add(new RowStyle(SizeType.Absolute, 36f)); sch.RowStyles.Add(new RowStyle(SizeType.Absolute, 36f)); sch.RowStyles.Add(new RowStyle(SizeType.Absolute, 32f));
+        Label al = new Label(); al.Text = "Action"; al.AutoSize = true; al.Anchor = AnchorStyles.Left; sch.Controls.Add(al,0,0);
+        ScheduleActionBox = new ComboBox(); ScheduleActionBox.DropDownStyle = ComboBoxStyle.DropDownList; ScheduleActionBox.Dock = DockStyle.Fill; ScheduleActionBox.Items.Add("Shut down"); ScheduleActionBox.Items.Add("Restart"); ScheduleActionBox.SelectedIndex = 0; sch.Controls.Add(ScheduleActionBox,1,0);
+        Label dl = new Label(); dl.Text = "Minutes"; dl.AutoSize = true; dl.Anchor = AnchorStyles.Left; sch.Controls.Add(dl,0,1);
+        ScheduleMinutesBox = NewNumeric(1, 10080, 10); ScheduleMinutesBox.Dock = DockStyle.Fill; sch.Controls.Add(ScheduleMinutesBox,1,1);
+        Button scheduleButton = MakeButton("Schedule", 0, 0, 105, 30); scheduleButton.Dock = DockStyle.Fill; scheduleButton.Click += ScheduleAction; sch.Controls.Add(scheduleButton,2,0);
+        Button cancelScheduleButton = MakeButton("Cancel schedule", 0, 0, 125, 30); cancelScheduleButton.Dock = DockStyle.Fill; cancelScheduleButton.Click += CancelScheduledAction; sch.Controls.Add(cancelScheduleButton,2,1);
+        Label schHint = new Label(); schHint.Text = "Uses Windows' timer. Cancel it here or from the tray."; schHint.ForeColor = Color.Silver; schHint.Dock = DockStyle.Fill; sch.Controls.Add(schHint,0,2); sch.SetColumnSpan(schHint,3);
         schedule.Controls.Add(sch); root.Controls.Add(schedule, 0, 1); root.SetColumnSpan(schedule, 1);
 
         GroupBox options = MakeGroup("Safety & convenience");
-        TableLayoutPanel opt = new TableLayoutPanel(); opt.Dock = DockStyle.Fill; opt.Padding = new Padding(12); opt.RowCount = 6; opt.ColumnCount = 1;
-        TestModeBox = NewCheck("Test mode (never performs Windows power actions)", 0); opt.Controls.Add(TestModeBox,0,0);
-        HotkeyBox = NewCheck("Enable desktop-only hotkey (Ctrl+Alt+Shift+S)", 1); opt.Controls.Add(HotkeyBox,0,1);
+        TableLayoutPanel opt = new TableLayoutPanel(); opt.Dock = DockStyle.Fill; opt.Padding = new Padding(8); opt.RowCount = 6; opt.ColumnCount = 1;
+        opt.RowStyles.Add(new RowStyle(SizeType.Absolute, 23f));
+        opt.RowStyles.Add(new RowStyle(SizeType.Absolute, 23f));
+        opt.RowStyles.Add(new RowStyle(SizeType.Absolute, 23f));
+        opt.RowStyles.Add(new RowStyle(SizeType.Absolute, 26f));
+        opt.RowStyles.Add(new RowStyle(SizeType.Absolute, 23f));
+        opt.RowStyles.Add(new RowStyle(SizeType.Absolute, 36f));
+        TestModeBox = NewCheck("Test mode (simulate; no Windows actions)", 0); opt.Controls.Add(TestModeBox,0,0);
+        HotkeyBox = NewCheck("Desktop-only hotkey (Ctrl+Alt+Shift+S)", 1); opt.Controls.Add(HotkeyBox,0,1);
         TrayStartBox = NewCheck("Start utility in the system tray", 2); opt.Controls.Add(TrayStartBox,0,2);
         CloseToTrayBox = NewCheck("Close button hides to tray instead of exiting", 3); opt.Controls.Add(CloseToTrayBox,0,3);
         StartWithWindowsBox = NewCheck("Start with Windows (tray mode)", 4); opt.Controls.Add(StartWithWindowsBox,0,4);
         FlowLayoutPanel settingsButtons = new FlowLayoutPanel();
         settingsButtons.Dock = DockStyle.Fill;
         settingsButtons.WrapContents = false;
-        Button save = MakeButton("Save settings",0,0,95,28); save.Margin = new Padding(2); save.Click += SaveSettings; settingsButtons.Controls.Add(save);
-        Button openFolder = MakeButton("Open folder",0,0,82,28); openFolder.Margin = new Padding(2); openFolder.Click += delegate { OpenFolder(); }; settingsButtons.Controls.Add(openFolder);
-        Button reset = MakeButton("Reset defaults",0,0,95,28); reset.Margin = new Padding(2); reset.Click += ResetSettings; settingsButtons.Controls.Add(reset);
+        Button save = MakeButton("Save",0,0,80,28); save.Margin = new Padding(2); save.Click += SaveSettings; settingsButtons.Controls.Add(save);
+        Button openFolder = MakeButton("Open folder",0,0,95,28); openFolder.Margin = new Padding(2); openFolder.Click += delegate { OpenFolder(); }; settingsButtons.Controls.Add(openFolder);
+        Button reset = MakeButton("Reset",0,0,80,28); reset.Margin = new Padding(2); reset.Click += ResetSettings; settingsButtons.Controls.Add(reset);
         opt.Controls.Add(settingsButtons,0,5);
         options.Controls.Add(opt); root.Controls.Add(options,1,1);
 
@@ -170,9 +197,10 @@ internal sealed class MainForm : Form
         Button b = new Button();
         b.Text = text;
         b.Tag = action;
-        b.Width = 150; b.Height = 82;
-        b.Margin = new Padding(8);
+        b.Width = 150; b.Height = 62;
+        b.Margin = new Padding(4);
         b.Font = new Font("Segoe UI Semibold", 12f, FontStyle.Bold);
+        StyleButton(b);
         b.Click += delegate { BeginAction((PowerAction)b.Tag); };
         flow.Controls.Add(b);
     }
@@ -265,7 +293,7 @@ internal sealed class MainForm : Form
         TestModeBox.Enabled = !Config.ForceTestMode;
         TestModeBox.Text = Config.ForceTestMode
             ? "Test mode (forced for this run)"
-            : "Test mode (never performs Windows power actions)";
+            : "Test mode (simulate; no Windows actions)";
         TrayStartBox.Checked = Config.StartInTray;
         CloseToTrayBox.Checked = Config.CloseToTray;
         StartWithWindowsBox.Checked = Config.StartWithWindows || StartupManager.IsEnabled();
@@ -488,7 +516,7 @@ internal sealed class MainForm : Form
     private void ShowAbout()
     {
         MessageBox.Show(this,
-            "Shutdown Utility Pro 3.0.0\r\n\r\n" +
+            "Shutdown Utility Pro 3.1.0\r\n\r\n" +
             (Config.TestMode ? "TEST MODE is enabled; no Windows power actions will run.\r\n" : "Windows power controls are enabled.\r\n") +
             "No forced application termination is used by default.\r\n\r\n" +
             "Folder:\r\n" + AppResources.BaseDir,
@@ -548,7 +576,16 @@ internal sealed class MainForm : Form
     }
     private static Button MakeButton(string text, int x, int y, int w, int h)
     {
-        Button b = new Button(); b.Text = text; b.Location = new Point(x,y); b.Size = new Size(w,h); return b;
+        Button b = new Button(); b.Text = text; b.Location = new Point(x,y); b.Size = new Size(w,h); StyleButton(b); return b;
+    }
+    private static void StyleButton(Button button)
+    {
+        button.FlatStyle = FlatStyle.Flat;
+        button.FlatAppearance.BorderColor = Color.FromArgb(72, 78, 90);
+        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(48, 55, 68);
+        button.FlatAppearance.MouseDownBackColor = Color.FromArgb(39, 73, 120);
+        button.BackColor = Color.FromArgb(35, 39, 48);
+        button.ForeColor = Color.White;
     }
     private static NumericUpDown NewNumeric(int min, int max, int value)
     {
@@ -556,7 +593,7 @@ internal sealed class MainForm : Form
     }
     private static CheckBox NewCheck(string text, int row)
     {
-        CheckBox c = new CheckBox(); c.Text = text; c.AutoSize = true; c.Margin = new Padding(3,6,3,3); return c;
+        CheckBox c = new CheckBox(); c.Text = text; c.AutoSize = true; c.Margin = new Padding(3,3,3,1); return c;
     }
     private static void AddLabel(TableLayoutPanel t, string text, int row)
     {
@@ -567,9 +604,9 @@ internal sealed class MainForm : Form
     {
         if (ModeLabel == null) return;
         ModeLabel.Text = Config.TestMode
-            ? "TEST MODE - Windows power actions and schedules are disabled"
-            : "Windows power controls are enabled";
-        ModeLabel.ForeColor = Config.TestMode ? Color.Khaki : Color.Silver;
+            ? "TEST MODE - actions are simulated"
+            : "Windows power actions are enabled";
+        ModeLabel.ForeColor = Config.TestMode ? Color.Gold : Color.LightGreen;
         if (Tray != null) Tray.Text = Config.TestMode ? "Shutdown Utility Pro - TEST MODE" : "Shutdown Utility Pro";
     }
 

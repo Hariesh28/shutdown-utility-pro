@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 3.1.0 - 2026-10-08
+
+- Reject invalid, out-of-range, and extra command-line arguments instead of silently coercing delays or opening the dashboard.
+- Allow command-line actions and cancellation to run while the dashboard is already open; retain single-instance behavior for dashboard launches.
+- Add regression coverage for command-line delay bounds and numeric format.
+- Make the installer stop when desktop shortcut creation fails.
+- Notify Explorer after publishing the blank-label shortcut and clarify that its icon remains visible.
+- Add a safe post-extraction installation verifier, including simulated action checks, and run it against built and packaged release outputs.
+- Publish a newly built executable only after its configuration and optional assets have been staged successfully.
+- Fix dashboard control clipping, header overlap, and inconsistent dark button styling.
+- Make invisible-name desktop shortcut creation robust to Unicode path handling and fall back clearly when unsupported.
+- Expand setup and usage documentation with release verification, settings, command examples, and troubleshooting.
 - Open the dashboard on a no-argument launch instead of starting a shutdown countdown.
 - Enable Test mode by default and expose its state and controls in the dashboard and tray.
 - Add a command-line switch that forces safe simulation for a single run.

@@ -22,7 +22,22 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
-        if (!SingleInstance.Acquire())
+        bool forceTestMode = false;
+        List<string> commandArgs = new List<string>();
+        if (args != null)
+        {
+            foreach (string arg in args)
+            {
+                if (String.Equals(arg, "/test-mode", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(arg, "--test-mode", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(arg, "/test", StringComparison.OrdinalIgnoreCase))
+                    forceTestMode = true;
+                else commandArgs.Add(arg);
+            }
+        }
+
+        string[] filteredArgs = commandArgs.ToArray();
+        if (CommandLineParser.IsInteractiveLaunch(filteredArgs) && !SingleInstance.Acquire())
         {
             IntPtr existing = NativeMethods.FindWindowByCaption("Shutdown Utility Pro");
             if (existing != IntPtr.Zero)
@@ -51,26 +66,13 @@ internal static class Program
             return;
         }
         AppConfig config = AppConfig.Load(AppResources.ConfigPath);
-        bool forceTestMode = false;
-        List<string> commandArgs = new List<string>();
-        if (args != null)
-        {
-            foreach (string arg in args)
-            {
-                if (String.Equals(arg, "/test-mode", StringComparison.OrdinalIgnoreCase)
-                    || String.Equals(arg, "--test-mode", StringComparison.OrdinalIgnoreCase)
-                    || String.Equals(arg, "/test", StringComparison.OrdinalIgnoreCase))
-                    forceTestMode = true;
-                else commandArgs.Add(arg);
-            }
-        }
         if (forceTestMode)
         {
             config.TestMode = true;
             config.ForceTestMode = true;
             Logger.Write("Test mode forced for this run by command line.");
         }
-        HandleCommandLine(commandArgs.ToArray(), config);
+        HandleCommandLine(filteredArgs, config);
     }
 
     private static void HandleCommandLine(string[] args, AppConfig config)
@@ -79,16 +81,19 @@ internal static class Program
         int seconds;
         if (first == "/help" || first == "-help" || first == "--help")
         {
+            if (args.Length != 1) { ShowInvalidCommand("The help command does not accept additional arguments."); return; }
             MessageBox.Show(GetHelpText(), "Shutdown Utility Pro", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
         if (first == "/version" || first == "-version")
         {
-            MessageBox.Show("Shutdown Utility Pro 3.0.0", "Shutdown Utility Pro", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (args.Length != 1) { ShowInvalidCommand("The version command does not accept additional arguments."); return; }
+            MessageBox.Show("Shutdown Utility Pro 3.1.0", "Shutdown Utility Pro", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
         if (first == "/cancel" || first == "-cancel")
         {
+            if (args.Length != 1) { ShowInvalidCommand("The cancel command does not accept additional arguments."); return; }
             string error; bool ok = PowerController.CancelScheduled(out error);
             MessageBox.Show(ok ? "Any pending Windows shutdown/restart timer was cancelled." : "Windows did not cancel a pending timer.\r\n\r\n" + error, "Shutdown Utility Pro", MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
             Logger.Write("Command-line cancel requested: success=" + ok);
@@ -96,20 +101,36 @@ internal static class Program
         }
         if (first == "/test-sound")
         {
+            if (args.Length != 1) { ShowInvalidCommand("The test-sound command does not accept additional arguments."); return; }
             TestConfiguredSound(config); return;
         }
+        if (first == "/self-test" || first == "--self-test")
+        {
+            if (args.Length != 1) { Environment.ExitCode = 2; ShowInvalidCommand("The self-test command does not accept additional arguments."); return; }
+            string error;
+            Environment.ExitCode = InstallationDiagnostics.Run(AppResources.BaseDir, AppResources.UserDataDir, out error) ? 0 : 1;
+            return;
+        }
         if (args == null || args.Length == 0) { Application.Run(new MainForm(config)); return; }
-        if (first == "/tray" || first == "/panel") { Application.Run(new MainForm(config)); return; }
+        if (first == "/tray" || first == "/panel")
+        {
+            if (args.Length != 1) { ShowInvalidCommand("The tray command does not accept additional arguments."); return; }
+            Application.Run(new MainForm(config)); return;
+        }
 
         if (first == "/schedule-shutdown" || first == "/schedule-restart")
         {
             seconds = config.ScheduledDefaultMinutes * 60;
-            if (args.Length > 1 && !Int32.TryParse(args[1], out seconds))
+            if (args.Length > 2)
             {
-                MessageBox.Show("Schedule delay must be a whole number of seconds.", "Invalid command", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowInvalidCommand("A schedule accepts at most one delay argument.");
                 return;
             }
-            if (args.Length > 1) seconds = Math.Max(1, Math.Min(604800, seconds));
+            if (args.Length == 2 && !CommandLineParser.TryParseDelay(args[1], 1, 604800, out seconds))
+            {
+                ShowInvalidCommand("Schedule delay must be a whole number of seconds from 1 to 604800.");
+                return;
+            }
             bool simulated;
             string error;
             PowerAction action = first == "/schedule-restart" ? PowerAction.Restart : PowerAction.Shutdown;
@@ -123,15 +144,28 @@ internal static class Program
         }
 
         PowerAction action2;
-        if (!TryParseAction(first, out action2)) { Application.Run(new MainForm(config)); return; }
-        seconds = config.CountdownSeconds;
-        if (args.Length > 1 && !Int32.TryParse(args[1], out seconds))
+        if (!TryParseAction(first, out action2))
         {
-            MessageBox.Show("Countdown must be a whole number of seconds.", "Invalid command", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            ShowInvalidCommand("Unknown command: " + args[0]);
             return;
         }
-        seconds = Math.Max(1, Math.Min(3600, seconds));
+        seconds = config.CountdownSeconds;
+        if (args.Length > 2)
+        {
+            ShowInvalidCommand("A power action accepts at most one countdown argument.");
+            return;
+        }
+        if (args.Length == 2 && !CommandLineParser.TryParseDelay(args[1], 1, 3600, out seconds))
+        {
+            ShowInvalidCommand("Countdown must be a whole number of seconds from 1 to 3600.");
+            return;
+        }
         using (CountdownForm f = new CountdownForm(config, action2, seconds)) f.ShowDialog();
+    }
+
+    private static void ShowInvalidCommand(string message)
+    {
+        MessageBox.Show(message + "\r\n\r\n" + GetHelpText(), "Invalid command", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
     private static bool TryParseAction(string s, out PowerAction action)
@@ -166,6 +200,7 @@ internal static class Program
                "Shutdown.exe /schedule-shutdown 300  Schedule shutdown in 300 seconds\r\n" +
                "Shutdown.exe /schedule-restart 600   Schedule restart in 600 seconds\r\n" +
                "Shutdown.exe /cancel             Cancel Windows scheduled shutdown/restart\r\n" +
+               "Shutdown.exe /self-test         Verify the installation using safe simulations\r\n" +
                "Shutdown.exe --test-mode /shutdown 3  Run a simulated 3-second shutdown\r\n" +
                "Shutdown.exe /test-sound         Play configured shutdown sound\r\n" +
                "Shutdown.exe /help           Show this help";

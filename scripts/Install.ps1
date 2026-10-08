@@ -9,7 +9,8 @@ if ($buildProcess.ExitCode -ne 0) { throw "Build.cmd failed with exit code $($bu
 $exe = Join-Path $base 'artifacts\Shutdown.exe'
 if (-not (Test-Path $exe)) { throw 'Build failed: Shutdown.exe was not created.' }
 $shortcutScript = Join-Path $scriptsDir 'CreateDesktopShortcut.ps1'
-PowerShell -NoProfile -ExecutionPolicy Bypass -File $shortcutScript
+& PowerShell.exe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript
+if ($LASTEXITCODE -ne 0) { throw "Desktop shortcut creation failed with exit code $LASTEXITCODE." }
 Write-Host ''
 Write-Host 'Installed for the current user.' -ForegroundColor Green
 Write-Host 'The desktop shortcut has no keyboard shortcut assigned by default.'

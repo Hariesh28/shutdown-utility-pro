@@ -8,7 +8,7 @@ if /I "%~1"=="/nopause" set "NOPAUSE=1"
 title Shutdown Utility Pro - Build
 
 echo ================================================
-echo      Shutdown Utility Pro 3.0 - Build
+echo      Shutdown Utility Pro 3.1 - Build
 echo ================================================
 echo.
 
@@ -25,8 +25,8 @@ set "SOURCE_DIR=src\ShutdownUtility"
 set "ASSET_DIR=assets"
 set "CONFIG_DIR=config"
 set "OUTPUT_DIR=artifacts"
-set "SOURCES=%SOURCE_DIR%\AssemblyInfo.cs %SOURCE_DIR%\AppConfig.cs %SOURCE_DIR%\Logger.cs %SOURCE_DIR%\WindowsServices.cs %SOURCE_DIR%\CountdownForm.cs %SOURCE_DIR%\MainForm.cs %SOURCE_DIR%\Program.cs"
-for %%F in (AssemblyInfo.cs AppConfig.cs Logger.cs WindowsServices.cs CountdownForm.cs MainForm.cs Program.cs app.manifest) do (
+set "SOURCES=%SOURCE_DIR%\AssemblyInfo.cs %SOURCE_DIR%\AppConfig.cs %SOURCE_DIR%\CommandLineParser.cs %SOURCE_DIR%\InstallationDiagnostics.cs %SOURCE_DIR%\Logger.cs %SOURCE_DIR%\WindowsServices.cs %SOURCE_DIR%\CountdownForm.cs %SOURCE_DIR%\MainForm.cs %SOURCE_DIR%\Program.cs"
+for %%F in (AssemblyInfo.cs AppConfig.cs CommandLineParser.cs InstallationDiagnostics.cs Logger.cs WindowsServices.cs CountdownForm.cs MainForm.cs Program.cs app.manifest) do (
   if not exist "%SOURCE_DIR%\%%F" (
     echo ERROR: %SOURCE_DIR%\%%F is missing.
     if "%NOPAUSE%"=="0" pause
@@ -36,6 +36,11 @@ for %%F in (AssemblyInfo.cs AppConfig.cs Logger.cs WindowsServices.cs CountdownF
 
 if not exist "%CONFIG_DIR%\Shutdown.config" (
   echo ERROR: %CONFIG_DIR%\Shutdown.config is missing.
+  if "%NOPAUSE%"=="0" pause
+  exit /b 1
+)
+if not exist "scripts\VerifyInstall.ps1" (
+  echo ERROR: scripts\VerifyInstall.ps1 is missing.
   if "%NOPAUSE%"=="0" pause
   exit /b 1
 )
@@ -69,17 +74,17 @@ if errorlevel 1 (
   exit /b 1
 )
 
-move /Y "%BUILD_EXE%" "%OUTPUT_DIR%\Shutdown.exe" >nul
+copy /Y "%CONFIG_DIR%\Shutdown.config" "%OUTPUT_DIR%\Shutdown.config" >nul
 if errorlevel 1 (
-  echo.
-  echo ERROR: Could not replace %OUTPUT_DIR%\Shutdown.exe. Close the running application and try again.
+  if exist "%BUILD_EXE%" del /q "%BUILD_EXE%"
+  echo ERROR: Could not copy the default configuration.
   if "%NOPAUSE%"=="0" pause
   exit /b 1
 )
-
-copy /Y "%CONFIG_DIR%\Shutdown.config" "%OUTPUT_DIR%\Shutdown.config" >nul
+copy /Y "scripts\VerifyInstall.ps1" "%OUTPUT_DIR%\VerifyInstall.ps1" >nul
 if errorlevel 1 (
-  echo ERROR: Could not copy the default configuration.
+  if exist "%BUILD_EXE%" del /q "%BUILD_EXE%"
+  echo ERROR: Could not copy the installation verification script.
   if "%NOPAUSE%"=="0" pause
   exit /b 1
 )
@@ -87,6 +92,7 @@ for %%F in (Shutdown.wav Restart.wav Sleep.wav Hibernate.wav Lock.wav) do (
   if exist "%ASSET_DIR%\%%F" (
     copy /Y "%ASSET_DIR%\%%F" "%OUTPUT_DIR%\%%F" >nul
     if errorlevel 1 (
+      if exist "%BUILD_EXE%" del /q "%BUILD_EXE%"
       echo ERROR: Could not copy %ASSET_DIR%\%%F.
       if "%NOPAUSE%"=="0" pause
       exit /b 1
@@ -96,10 +102,20 @@ for %%F in (Shutdown.wav Restart.wav Sleep.wav Hibernate.wav Lock.wav) do (
 if exist "%ASSET_DIR%\Shutdown.ico" (
   copy /Y "%ASSET_DIR%\Shutdown.ico" "%OUTPUT_DIR%\Shutdown.ico" >nul
   if errorlevel 1 (
+    if exist "%BUILD_EXE%" del /q "%BUILD_EXE%"
     echo ERROR: Could not copy the application icon.
     if "%NOPAUSE%"=="0" pause
     exit /b 1
   )
+)
+
+move /Y "%BUILD_EXE%" "%OUTPUT_DIR%\Shutdown.exe" >nul
+if errorlevel 1 (
+  if exist "%BUILD_EXE%" del /q "%BUILD_EXE%"
+  echo.
+  echo ERROR: Could not replace %OUTPUT_DIR%\Shutdown.exe. Close the running application and try again.
+  if "%NOPAUSE%"=="0" pause
+  exit /b 1
 )
 
 echo.
