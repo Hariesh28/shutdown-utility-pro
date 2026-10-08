@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 3.1.1 - 2026-10-08
+
+- Refresh the dashboard with a modern card layout, consistent dark inputs, clearer spacing, and an emphasized primary action.
+- Make the active safety mode more visible and explain pending Test mode changes in the dashboard.
+- Treat closing the countdown window as cancellation and ignore delayed sound callbacks after close, preventing a countdown from restarting during form disposal.
+- Add regression coverage for countdown cancellation during sound playback.
+
+- Improve the dashboard hierarchy and responsive sizing, add a prominent active safety-mode banner, and clarify the steps required to enable or restore safe mode.
+- Improve screen-reader descriptions and surface errors when restoring safe defaults fails.
+
 ## 3.1.0 - 2026-10-08
 
 - Reject invalid, out-of-range, and extra command-line arguments instead of silently coercing delays or opening the dashboard.

@@ -15,7 +15,7 @@ internal sealed class CountdownForm : Form
     private Button CancelActionButton;
     private System.Windows.Forms.Timer Timer;
     private int Remaining;
-    private bool Cancelled;
+    private volatile bool Cancelled;
     private bool Executed;
     private bool SoundFinished;
     private SoundPlayer SoundPlayer;
@@ -127,10 +127,22 @@ internal sealed class CountdownForm : Form
                     catch (Exception ex) { Logger.Write("Sound playback failed: " + ex); }
                     finally
                     {
-                        if (!IsDisposed && !Cancelled)
+                        if (!Cancelled)
                         {
-                            try { BeginInvoke((MethodInvoker)delegate { SoundFinished = true; if (Seconds == 0) ExecuteAction(); else { StatusLabel.Text = "Click Cancel or press Esc to abort."; Timer.Start(); } }); }
-                            catch { }
+                            try
+                            {
+                                BeginInvoke((MethodInvoker)delegate
+                                {
+                                    if (!ShouldResumeAfterSound(Cancelled, Executed, IsDisposed || Disposing)) return;
+                                    SoundFinished = true;
+                                    if (Seconds == 0) ExecuteAction();
+                                    else { StatusLabel.Text = "Click Cancel or press Esc to abort."; Timer.Start(); }
+                                });
+                            }
+                            catch (InvalidOperationException ex)
+                            {
+                                Logger.Write("Sound completion callback was unavailable: " + ex.Message);
+                            }
                         }
                     }
                 });
@@ -195,9 +207,18 @@ internal sealed class CountdownForm : Form
 
     private void OnClosing(object sender, FormClosingEventArgs e)
     {
-        if (!Executed) Logger.Write("Countdown cancelled: " + Action);
+        if (!Executed)
+        {
+            Cancelled = true;
+            Logger.Write("Countdown cancelled: " + Action);
+        }
         Timer.Stop();
         try { if (SoundPlayer != null) SoundPlayer.Stop(); } catch { }
+    }
+
+    internal static bool ShouldResumeAfterSound(bool cancelled, bool executed, bool disposing)
+    {
+        return !cancelled && !executed && !disposing;
     }
 
     private static string GetActionText(PowerAction action)

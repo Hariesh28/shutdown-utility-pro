@@ -18,6 +18,7 @@ internal static class RegressionTests
             TestInstallationDiagnostics(testDirectory);
             TestCommandLineDelayParsing();
             TestInteractiveLaunchDetection();
+            TestCountdownSoundCompletionCancellation();
             TestPowerActionsAreSimulated();
             TestScheduleValidation();
             Console.WriteLine("PASS: " + Assertions + " assertions.");
@@ -180,6 +181,18 @@ internal static class RegressionTests
         Assert(!CommandLineParser.IsInteractiveLaunch(new string[] { "/cancel" }), "Cancel commands must run even when the dashboard is open.");
         Assert(!CommandLineParser.IsInteractiveLaunch(new string[] { "/shutdown", "3" }), "Power commands must run independently of the dashboard instance.");
         Assert(!CommandLineParser.IsInteractiveLaunch(new string[] { "/help" }), "Help should run independently of the dashboard instance.");
+    }
+
+    private static void TestCountdownSoundCompletionCancellation()
+    {
+        Assert(CountdownForm.ShouldResumeAfterSound(false, false, false),
+        "Sound completion should resume an active countdown.");
+        Assert(!CountdownForm.ShouldResumeAfterSound(true, false, false),
+        "Closing or cancelling a countdown must prevent a late sound callback from resuming it.");
+        Assert(!CountdownForm.ShouldResumeAfterSound(false, true, false),
+        "Sound completion must not resume after the action has executed.");
+        Assert(!CountdownForm.ShouldResumeAfterSound(false, false, true),
+        "Sound completion must not resume a disposing countdown.");
     }
 
     private static void TestScheduleValidation()

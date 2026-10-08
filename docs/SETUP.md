@@ -62,4 +62,4 @@ For a Windows native scheduled shutdown/restart:
 
 `artifacts\Shutdown.exe /cancel`
 
-Interactive countdowns can be cancelled with the Cancel button or ESC.
+Interactive countdowns can be cancelled with the Cancel button, ESC, or the countdown window's close button.

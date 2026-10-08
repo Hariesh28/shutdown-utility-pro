@@ -86,7 +86,7 @@ flowchart LR
 3. Cancel with the button or `Esc`, or let the countdown finish to see the simulation notice.
 4. Test sound with the **Test** button. Test a schedule and confirm the app says it was simulated; no Windows timer is created while Test mode is on.
 
-For a real action, uncheck **Test mode**, choose **Save settings**, and accept the warning. After that, countdown actions and schedules can affect Windows. To return to safe operation, enable Test mode again or use the dashboard's **Reset defaults** button.
+To enable real Windows actions, open **Safety & convenience**, uncheck **Test mode**, click **Save settings**, then accept the warning. The checkbox does not change the active mode until settings are saved; the header shows the active mode, and the note under the checkbox explains whether a change is pending. After real mode is enabled, countdown actions and schedules can affect Windows. To return to safe operation, check Test mode and save, or use the dashboard's **Reset defaults** button.
 
 ### Countdown and sound behavior
 
@@ -94,7 +94,7 @@ For a real action, uncheck **Test mode**, choose **Save settings**, and accept t
 - An action-specific WAV beside the EXE takes precedence: `Shutdown.wav`, `Restart.wav`, `Sleep.wav`, `Hibernate.wav`, or `Lock.wav`. Otherwise the configured `SoundFile` is used.
 - WAV playback uses Windows' `System.Media.SoundPlayer`. With **Wait for sound to finish** enabled, the countdown starts after playback; otherwise the sound and countdown run together.
 - Missing or unreadable audio is logged but does not block an action.
-- Interactive countdowns can be cancelled until the action begins. Shutdown/restart do not use the force-close (`/f`) option.
+- Interactive countdowns can be cancelled until the action begins with the **Cancel** button, **Esc**, or the window close button. Closing during sound playback also cancels the countdown. Shutdown/restart do not use the force-close (`/f`) option.
 
 ### System tray
 
