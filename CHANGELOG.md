@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 3.2.0 - 2026-10-08
+
+- Make the desktop shortcut start the configured cancellable shutdown countdown instead of opening the dashboard. Windows closes applications normally and can show save prompts; no processes are forcibly terminated.
+- Add a custom multi-resolution power/countdown icon to the executable, dashboard, countdown window, desktop shortcuts, and system tray.
+- Keep Test mode enabled by default, and make the desktop shortcut honor the saved safety setting.
+
 ## 3.1.2 - 2026-10-08
 
 - Show whether settings have unsaved changes, disable Save when everything is up to date, add focused control guidance, and disable sound-wait options while sound playback is off.

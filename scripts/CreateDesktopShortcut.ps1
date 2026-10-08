@@ -14,11 +14,12 @@ try {
     $wsh = New-Object -ComObject WScript.Shell
     $shortcut = $wsh.CreateShortcut($temporaryLink)
     $shortcut.TargetPath = $exe
+    $shortcut.Arguments = '/shutdown'
     $shortcut.WorkingDirectory = $appDir
     $icon = Join-Path $appDir 'Shutdown.ico'
     if (Test-Path $icon) { $shortcut.IconLocation = "$icon,0" } else { $shortcut.IconLocation = "$exe,0" }
     $shortcut.WindowStyle = 1
-    $shortcut.Description = 'Safe shutdown utility with cancellable countdown'
+    $shortcut.Description = 'Start the configured, cancellable Windows shutdown countdown'
     $shortcut.Save()
     if (-not [System.IO.File]::Exists($temporaryLink)) { throw "Windows did not create the temporary shortcut: $temporaryLink" }
 
@@ -43,3 +44,4 @@ finally {
 }
 
 Write-Host "Created or updated: $link"
+Write-Host 'Double-click the desktop shortcut to start the shutdown countdown. Windows handles open apps normally and may show save prompts.'

@@ -58,7 +58,7 @@ Set-Location .\shutdown-utility-pro
 .\artifacts\Shutdown.exe
 ```
 
-The build creates `artifacts\Shutdown.exe`, copies `config\Shutdown.config` there, and includes optional assets found in `assets\`. If the compiler is missing, install a .NET Framework developer pack that provides the compiler at one of the paths above, then retry.
+The build creates `artifacts\Shutdown.exe`, generates and embeds the app icon, copies `config\Shutdown.config` there, and includes optional sounds found in `assets\`. If the compiler is missing, install a .NET Framework developer pack that provides the compiler at one of the paths above, then retry.
 
 ## Explore the app
 
@@ -98,7 +98,7 @@ To enable real Windows actions, open **Safety & convenience**, uncheck **Test mo
 
 ### System tray
 
-Right-click the tray icon for **Open dashboard**, all five interactive actions, quick shutdown/restart schedules, **Cancel scheduled power action**, **Test sound**, **Open data folder**, **Open application folder**, **View log**, **About**, and **Exit**. Double-click the icon to reopen the dashboard. The icon label indicates when Test mode is enabled.
+The app uses a custom power/countdown icon in its title bar and notification area. Right-click the tray icon for **Open dashboard**, all five interactive actions, quick shutdown/restart schedules, **Cancel scheduled power action**, **Test sound**, **Open data folder**, **Open application folder**, **View log**, **About**, and **Exit**. Double-click the icon to reopen the dashboard. The icon label indicates when Test mode is enabled.
 
 The tray schedules are fixed quick choices (30 seconds, 5 minutes, or 10 minutes). Use the dashboard schedule controls or command line for a custom delay.
 
@@ -145,7 +145,7 @@ The configuration is plain text with one `Name=value` setting per line. Lines st
 | `TestMode` | `true` | Boolean; safety-critical setting. The dashboard asks before disabling it. |
 | `ScheduledDefaultMinutes` | `10` | Integer, 1–10,080. |
 
-**Sound and icon assets:** Put `Shutdown.wav`, `Restart.wav`, `Sleep.wav`, `Hibernate.wav`, `Lock.wav`, or `Shutdown.ico` in `assets\` and rebuild. Sounds are copied beside the EXE; the icon is embedded and copied when present. WAV files can also be selected with **Browse** in the dashboard.
+**Sound and icon assets:** The build generates the branded multi-resolution `Shutdown.ico` from `scripts\GenerateAppIcon.ps1`, embeds it in the EXE, and copies it beside the executable for shortcuts and the tray icon. To regenerate it manually, run `powershell -ExecutionPolicy Bypass -File .\scripts\GenerateAppIcon.ps1`. Put optional `Shutdown.wav`, `Restart.wav`, `Sleep.wav`, `Hibernate.wav`, or `Lock.wav` files in `assets\` and rebuild; WAV files can also be selected with **Browse** in the dashboard.
 
 ## Use the command line
 
@@ -154,6 +154,7 @@ Run commands in PowerShell or Command Prompt from the repository root after buil
 | Command | Result |
 | --- | --- |
 | `.\artifacts\Shutdown.exe` | Open the dashboard; does not initiate an action. |
+| Desktop shortcut | Start the configured shutdown countdown directly, without opening the dashboard. The shortcut honors Test mode; when real actions are enabled, Windows closes apps normally and may display prompts for unsaved work. |
 | `.\artifacts\Shutdown.exe /tray` | Launch the app; it opens the dashboard unless **Start utility in the system tray** is enabled. |
 | `.\artifacts\Shutdown.exe /shutdown 5` | Start a 5-second cancellable shutdown countdown. |
 | `.\artifacts\Shutdown.exe /restart 5` | Start a 5-second cancellable restart countdown. |
@@ -171,6 +172,8 @@ Run commands in PowerShell or Command Prompt from the repository root after buil
 The delay argument for countdowns must be a whole number from 1 to 3,600. For scheduled shutdown/restart it must be a whole number from 1 to 604,800 (7 days). Invalid values (including zero, negative, fractional, or out-of-range values) and unexpected extra arguments are rejected rather than silently adjusted. If omitted, an interactive command uses `CountdownSeconds`; a schedule uses `ScheduledDefaultMinutes`. Unknown commands display an error and help instead of opening the dashboard.
 
 The dashboard remains single-instance. Explicit command-line actions (including `/cancel`) are handled independently, so they still work when the dashboard is already open or minimized to the tray.
+
+The desktop shortcut created by either shortcut script passes `/shutdown`, so it starts the configured cancellable countdown without opening the dashboard. Countdown completion asks Windows to shut down without force-closing applications; open programs may block shutdown and display unsaved-work prompts. Test mode remains authoritative: while enabled, the shortcut only simulates shutdown.
 
 **Force simulation for one launch** even when the saved setting allows real actions:
 

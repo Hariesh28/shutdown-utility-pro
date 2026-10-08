@@ -8,7 +8,7 @@ if /I "%~1"=="/nopause" set "NOPAUSE=1"
 title Shutdown Utility Pro - Build
 
 echo ================================================
-echo      Shutdown Utility Pro 3.1.2 - Build
+echo      Shutdown Utility Pro 3.2.0 - Build
 echo ================================================
 echo.
 
@@ -44,6 +44,24 @@ if not exist "scripts\VerifyInstall.ps1" (
   if "%NOPAUSE%"=="0" pause
   exit /b 1
 )
+if not exist "scripts\GenerateAppIcon.ps1" (
+  echo ERROR: scripts\GenerateAppIcon.ps1 is missing.
+  if "%NOPAUSE%"=="0" pause
+  exit /b 1
+)
+
+echo Generating application icon...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts\GenerateAppIcon.ps1"
+if errorlevel 1 (
+  echo ERROR: Could not generate the application icon.
+  if "%NOPAUSE%"=="0" pause
+  exit /b 1
+)
+if not exist "%ASSET_DIR%\Shutdown.ico" (
+  echo ERROR: Application icon was not generated.
+  if "%NOPAUSE%"=="0" pause
+  exit /b 1
+)
 
 if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 if errorlevel 1 (
@@ -57,14 +75,8 @@ if exist "%BUILD_EXE%" del /q "%BUILD_EXE%"
 
 set "COMMON=/target:winexe /optimize+ /debug- /checked+ /out:"%BUILD_EXE%" /win32manifest:"%SOURCE_DIR%\app.manifest" /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll"
 
-if exist "%ASSET_DIR%\Shutdown.ico" (
-  echo Building with embedded Shutdown.ico...
-  "%CSC%" %COMMON% /win32icon:"%ASSET_DIR%\Shutdown.ico" %SOURCES%
-) else (
-  echo Building without custom icon.
-  echo Put Shutdown.ico in %ASSET_DIR% and rebuild to embed it.
-  "%CSC%" %COMMON% %SOURCES%
-)
+echo Building with embedded Shutdown.ico...
+"%CSC%" %COMMON% /win32icon:"%ASSET_DIR%\Shutdown.ico" %SOURCES%
 
 if errorlevel 1 (
   if exist "%BUILD_EXE%" del /q "%BUILD_EXE%"

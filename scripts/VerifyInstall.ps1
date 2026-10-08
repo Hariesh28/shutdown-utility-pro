@@ -2,9 +2,11 @@ $ErrorActionPreference = 'Stop'
 $appDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $exe = Join-Path $appDir 'Shutdown.exe'
 $config = Join-Path $appDir 'Shutdown.config'
+$icon = Join-Path $appDir 'Shutdown.ico'
 
 if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Shutdown.exe was not found beside this script: $exe" }
 if (-not (Test-Path -LiteralPath $config -PathType Leaf)) { throw "Shutdown.config was not found beside this script: $config" }
+if (-not (Test-Path -LiteralPath $icon -PathType Leaf)) { throw "Shutdown.ico was not found beside this script: $icon" }
 
 Write-Host 'Running the installed application self-test...'
 Write-Host 'This check never requests a Windows power action or native shutdown schedule.'

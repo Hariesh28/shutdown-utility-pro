@@ -73,6 +73,7 @@ try
     $wsh = New-Object -ComObject WScript.Shell
     $shortcut = $wsh.CreateShortcut($temporaryLink)
     $shortcut.TargetPath = $exe
+    $shortcut.Arguments = '/shutdown'
     $shortcut.WorkingDirectory = $appDir
     $icon = Join-Path $appDir 'Shutdown.ico'
     if (Test-Path $icon)
@@ -85,7 +86,7 @@ try
     }
     $shortcut.WindowStyle = 1
     $shortcut.Hotkey = ''
-    $shortcut.Description = 'Shutdown Utility Pro'
+    $shortcut.Description = 'Start the configured, cancellable Windows shutdown countdown'
     $shortcut.Save()
     if (-not [System.IO.File]::Exists($temporaryLink))
     {
@@ -99,7 +100,7 @@ try
         [ShutdownUtilityShellNotifications]::SHChangeNotify(0x00000002, 0x00000005, $invisibleLink, [IntPtr]::Zero)
         [ShutdownUtilityShellNotifications]::SHChangeNotify(0x00002000, 0x00000005, $invisibleLink, [IntPtr]::Zero)
         [ShutdownUtilityShellNotifications]::SHChangeNotify(0x00001000, 0x00000005, $desktop, [IntPtr]::Zero)
-        Write-Host 'Created shortcut. Its icon remains visible; only the filename label is blank.'
+        Write-Host 'Created shutdown shortcut. Its icon remains visible; only the filename label is blank.'
         Write-Host "Desktop location: $desktop"
     }
     catch
@@ -109,7 +110,7 @@ try
         [ShutdownUtilityShellNotifications]::SHChangeNotify(0x00000002, 0x00000005, $visibleLink, [IntPtr]::Zero)
         [ShutdownUtilityShellNotifications]::SHChangeNotify(0x00002000, 0x00000005, $visibleLink, [IntPtr]::Zero)
         [ShutdownUtilityShellNotifications]::SHChangeNotify(0x00001000, 0x00000005, $desktop, [IntPtr]::Zero)
-        Write-Warning "Windows could not publish the invisible-name shortcut ($invisibleError). Created a standard shortcut instead: $visibleLink"
+        Write-Warning "Windows could not publish the invisible-name shortcut ($invisibleError). Created a standard visible shutdown shortcut instead: $visibleLink"
     }
 }
 finally

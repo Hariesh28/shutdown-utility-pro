@@ -88,7 +88,7 @@ internal static class Program
         if (first == "/version" || first == "-version")
         {
             if (args.Length != 1) { ShowInvalidCommand("The version command does not accept additional arguments."); return; }
-            MessageBox.Show("Shutdown Utility Pro 3.1.2", "Shutdown Utility Pro", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Shutdown Utility Pro 3.2.0", "Shutdown Utility Pro", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
         if (first == "/cancel" || first == "-cancel")

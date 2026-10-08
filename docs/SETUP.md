@@ -26,13 +26,15 @@ Configuration and logs are stored in `%LOCALAPPDATA%\ShutdownUtilityPro`.
 
 ## 4. Sound and icon assets
 
-Place optional action sounds (`Shutdown.wav`, `Restart.wav`, `Sleep.wav`, `Hibernate.wav`, or `Lock.wav`) and `Shutdown.ico` in `assets\`, then rebuild to include them in the output.
+The build generates a branded multi-resolution `Shutdown.ico` from `scripts\GenerateAppIcon.ps1`, embeds it in the executable, and copies it beside the app for the dashboard, tray, and shortcuts. Optional action sounds (`Shutdown.wav`, `Restart.wav`, `Sleep.wav`, `Hibernate.wav`, or `Lock.wav`) can be placed in `assets\` before building.
 
 ## 5. Desktop shortcut and install
 
 Create a desktop shortcut:
 
 `powershell -ExecutionPolicy Bypass -File ".\scripts\CreateDesktopShortcut.ps1"`
+
+Double-clicking the shortcut starts the configured cancellable shutdown countdown without opening the dashboard. It honors Test mode. With real actions enabled, Windows handles open apps normally and may show prompts for unsaved work; the utility does not forcibly terminate processes.
 
 Install current-user desktop integration:
 

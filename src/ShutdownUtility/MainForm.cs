@@ -688,7 +688,7 @@ internal sealed class MainForm : Form
     private void ShowAbout()
     {
         MessageBox.Show(this,
-            "Shutdown Utility Pro 3.1.2\r\n\r\n" +
+            "Shutdown Utility Pro 3.2.0\r\n\r\n" +
             (Config.TestMode ? "TEST MODE is enabled; no Windows power actions will run.\r\n" : "Windows power controls are enabled.\r\n") +
             "No forced application termination is used by default.\r\n\r\n" +
             "Folder:\r\n" + AppResources.BaseDir,

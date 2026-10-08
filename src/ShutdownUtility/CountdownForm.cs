@@ -33,6 +33,7 @@ internal sealed class CountdownForm : Form
     private void InitializeUi()
     {
         Text = GetActionText(Action);
+        Icon = AppResources.GetAppIcon();
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;

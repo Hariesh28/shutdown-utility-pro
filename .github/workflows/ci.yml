@@ -66,6 +66,7 @@ jobs:
             "artifacts\Shutdown.exe",
             "artifacts\Shutdown.config",
             "artifacts\Shutdown.wav",
+            "artifacts\Shutdown.ico",
             "artifacts\VerifyInstall.ps1"
           )
           foreach ($path in $required) {
