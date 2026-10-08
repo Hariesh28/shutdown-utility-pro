@@ -80,7 +80,7 @@ jobs:
 
       - name: Verify installed application
         shell: pwsh
-        run: "& .\artifacts\VerifyInstall.ps1"
+        run: '& .\artifacts\VerifyInstall.ps1'
 
       - name: Run regression tests
         shell: cmd
