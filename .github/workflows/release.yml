@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   release:
-    if: github.event.created == true
     runs-on: windows-latest
     timeout-minutes: 15
     steps:

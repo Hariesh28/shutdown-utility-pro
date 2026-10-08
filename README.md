@@ -98,7 +98,7 @@ To enable real Windows actions, open **Safety & convenience**, uncheck **Test mo
 
 ### System tray
 
-Right-click the tray icon for **Open dashboard**, all five interactive actions, quick shutdown/restart schedules, **Cancel scheduled power action**, **Test sound**, **Open folder**, **View log**, **About**, and **Exit**. Double-click the icon to reopen the dashboard. The icon label indicates when Test mode is enabled.
+Right-click the tray icon for **Open dashboard**, all five interactive actions, quick shutdown/restart schedules, **Cancel scheduled power action**, **Test sound**, **Open data folder**, **Open application folder**, **View log**, **About**, and **Exit**. Double-click the icon to reopen the dashboard. The icon label indicates when Test mode is enabled.
 
 The tray schedules are fixed quick choices (30 seconds, 5 minutes, or 10 minutes). Use the dashboard schedule controls or command line for a custom delay.
 

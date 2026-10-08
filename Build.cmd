@@ -8,7 +8,7 @@ if /I "%~1"=="/nopause" set "NOPAUSE=1"
 title Shutdown Utility Pro - Build
 
 echo ================================================
-echo      Shutdown Utility Pro 3.1.1 - Build
+echo      Shutdown Utility Pro 3.1.2 - Build
 echo ================================================
 echo.
 

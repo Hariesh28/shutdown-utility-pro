@@ -25,10 +25,15 @@ internal sealed class MainForm : Form
     private Label TestModeHintLabel;
     private Panel ModeBannerPanel;
     private TextBox SoundPathBox;
+    private Button SaveSettingsButton;
+    private Label SettingsChangeLabel;
+    private ToolTip DashboardToolTip;
     private Label StatusLabel;
     private Label ModeLabel;
     private int HotkeyId = 9473;
     private bool Exiting;
+    private bool LoadingSettings;
+    private bool SavedStartWithWindows;
     private const string DefaultStatus = "Ready  |  Choose an action to preview its countdown.";
     private static readonly Color SurfaceColor = Color.FromArgb(25, 29, 37);
     private static readonly Color BorderColor = Color.FromArgb(48, 55, 67);
@@ -37,10 +42,14 @@ internal sealed class MainForm : Form
     public MainForm(AppConfig config)
     {
         Config = config;
+        LoadingSettings = true;
         InitializeUi();
         SetupTray();
         LoadWindowState();
         ApplyConfigToUi();
+        LoadingSettings = false;
+        SavedStartWithWindows = StartWithWindowsBox.Checked;
+        UpdateSettingsState();
         RegisterHotkeyIfNeeded();
         FormClosing += OnFormClosing;
         Resize += OnResize;
@@ -57,6 +66,11 @@ internal sealed class MainForm : Form
         Icon = AppResources.GetAppIcon();
         BackColor = Color.FromArgb(15, 18, 24);
         ForeColor = Color.FromArgb(235, 239, 245);
+        DashboardToolTip = new ToolTip();
+        DashboardToolTip.AutoPopDelay = 10000;
+        DashboardToolTip.InitialDelay = 450;
+        DashboardToolTip.ReshowDelay = 100;
+        DashboardToolTip.ShowAlways = true;
 
         Panel header = new Panel();
         header.Dock = DockStyle.Top;
@@ -95,6 +109,7 @@ internal sealed class MainForm : Form
 
         Button hideButton = MakeButton("Hide to tray", ClientSize.Width - 166, 35, 140, 38);
         hideButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        hideButton.AccessibleDescription = "Hide the dashboard. The utility keeps running in the notification area.";
         hideButton.Click += delegate { HideToTray(true); };
         header.Controls.Add(hideButton);
 
@@ -154,6 +169,7 @@ internal sealed class MainForm : Form
         st.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
         AddLabel(st, "Countdown (seconds)", 0);
         CountdownBox = NewNumeric(1, 3600, 3);
+        DashboardToolTip.SetToolTip(CountdownBox, "Countdown before a dashboard action begins. Range: 1 to 3,600 seconds.");
         st.Controls.Add(CountdownBox, 1, 0);
         AddLabel(st, "Sound file", 1);
         TableLayoutPanel soundPanel = new TableLayoutPanel();
@@ -168,6 +184,9 @@ internal sealed class MainForm : Form
         Button browseSound = MakeButton("Browse", 0, 0, 78, 28); browseSound.Dock = DockStyle.Fill;
         Button testSound = MakeButton("Test", 0, 0, 56, 28); testSound.Dock = DockStyle.Fill;
         browseSound.Click += BrowseSound; testSound.Click += TestSound;
+        DashboardToolTip.SetToolTip(SoundPathBox, "Fallback WAV sound. Action-specific WAV files beside the app take priority.");
+        DashboardToolTip.SetToolTip(browseSound, "Choose a WAV sound file.");
+        DashboardToolTip.SetToolTip(testSound, "Play the selected sound without starting a power action.");
         soundPanel.Controls.Add(SoundPathBox, 0, 0);
         soundPanel.Controls.Add(browseSound, 1, 0);
         soundPanel.Controls.Add(testSound, 2, 0);
@@ -175,6 +194,8 @@ internal sealed class MainForm : Form
         PlaySoundBox = NewCheck("Play sound", 2); st.Controls.Add(PlaySoundBox, 1, 2);
         WaitSoundBox = NewCheck("Wait for sound to finish", 3); st.Controls.Add(WaitSoundBox, 1, 3);
         NotificationBox = NewCheck("Show tray notifications", 4); st.Controls.Add(NotificationBox, 1, 4);
+        DashboardToolTip.SetToolTip(WaitSoundBox, "When enabled, the countdown starts after the selected WAV finishes playing.");
+        DashboardToolTip.SetToolTip(NotificationBox, "Show informational balloon messages from the notification-area icon.");
         Label hint = MakeHint("Action-specific WAV files are used automatically when present.", false);
         st.Controls.Add(hint, 1, 5);
         settingsBody.Controls.Add(st); root.Controls.Add(settings, 1, 0);
@@ -188,8 +209,12 @@ internal sealed class MainForm : Form
         ScheduleActionBox = new ComboBox(); ScheduleActionBox.DropDownStyle = ComboBoxStyle.DropDownList; ScheduleActionBox.Dock = DockStyle.Fill; ScheduleActionBox.Items.Add("Shut down"); ScheduleActionBox.Items.Add("Restart"); ScheduleActionBox.SelectedIndex = 0; StyleInput(ScheduleActionBox); sch.Controls.Add(ScheduleActionBox,1,0);
         Label dl = MakeFieldLabel("In minutes"); sch.Controls.Add(dl,0,1);
         ScheduleMinutesBox = NewNumeric(1, 10080, 10); ScheduleMinutesBox.Dock = DockStyle.Fill; StyleInput(ScheduleMinutesBox); sch.Controls.Add(ScheduleMinutesBox,1,1);
+        DashboardToolTip.SetToolTip(ScheduleActionBox, "Windows supports native delayed scheduling for shutdown and restart.");
+        DashboardToolTip.SetToolTip(ScheduleMinutesBox, "Schedule delay in minutes. Range: 1 to 10,080 (7 days).");
         Button scheduleButton = MakeButton("Schedule action", 0, 0, 140, 36); scheduleButton.Dock = DockStyle.Fill; scheduleButton.Click += ScheduleAction; StylePrimaryButton(scheduleButton); sch.Controls.Add(scheduleButton,2,0);
         Button cancelScheduleButton = MakeButton("Cancel schedule", 0, 0, 140, 36); cancelScheduleButton.Dock = DockStyle.Fill; cancelScheduleButton.Click += CancelScheduledAction; sch.Controls.Add(cancelScheduleButton,2,1);
+        DashboardToolTip.SetToolTip(scheduleButton, "Create a Windows shutdown or restart timer. Test mode simulates this instead.");
+        DashboardToolTip.SetToolTip(cancelScheduleButton, "Ask Windows to cancel a pending native shutdown or restart timer.");
         Label schHint = MakeHint("Uses the Windows timer. You can cancel it here or from the tray menu.", false); schHint.Dock = DockStyle.Top; sch.Controls.Add(schHint,0,2); sch.SetColumnSpan(schHint,3);
         scheduleBody.Controls.Add(sch); root.Controls.Add(schedule, 0, 1);
 
@@ -220,11 +245,33 @@ internal sealed class MainForm : Form
         FlowLayoutPanel settingsButtons = new FlowLayoutPanel();
         settingsButtons.Dock = DockStyle.Fill;
         settingsButtons.WrapContents = false;
-        Button save = MakeButton("Save settings",0,0,122,32); save.Margin = new Padding(2); save.Click += SaveSettings; StylePrimaryButton(save); settingsButtons.Controls.Add(save);
+        SaveSettingsButton = MakeButton("Save settings",0,0,122,32); SaveSettingsButton.Margin = new Padding(2); SaveSettingsButton.Click += SaveSettings; StylePrimaryButton(SaveSettingsButton); settingsButtons.Controls.Add(SaveSettingsButton);
         Button openFolder = MakeButton("Open data folder",0,0,132,32); openFolder.Margin = new Padding(2); openFolder.Click += delegate { OpenFolder(); }; settingsButtons.Controls.Add(openFolder);
+        DashboardToolTip.SetToolTip(openFolder, "Open this user's settings and diagnostic log folder.");
         Button reset = MakeButton("Reset",0,0,82,32); reset.Margin = new Padding(2); reset.Click += ResetSettings; settingsButtons.Controls.Add(reset);
+        SettingsChangeLabel = new Label();
+        SettingsChangeLabel.AutoSize = false;
+        SettingsChangeLabel.Width = 96;
+        SettingsChangeLabel.Height = 32;
+        SettingsChangeLabel.TextAlign = ContentAlignment.MiddleRight;
+        SettingsChangeLabel.Font = new Font("Segoe UI", 8.5f, FontStyle.Regular);
+        SettingsChangeLabel.ForeColor = Color.FromArgb(150, 163, 181);
+        settingsButtons.Controls.Add(SettingsChangeLabel);
         opt.Controls.Add(settingsButtons,0,6);
         optionsBody.Controls.Add(opt); root.Controls.Add(options,1,1);
+
+        CountdownBox.ValueChanged += SettingsChanged;
+        ScheduleMinutesBox.ValueChanged += SettingsChanged;
+        SoundPathBox.TextChanged += SettingsChanged;
+        PlaySoundBox.CheckedChanged += SettingsChanged;
+        WaitSoundBox.CheckedChanged += SettingsChanged;
+        NotificationBox.CheckedChanged += SettingsChanged;
+        HotkeyBox.CheckedChanged += SettingsChanged;
+        TrayStartBox.CheckedChanged += SettingsChanged;
+        CloseToTrayBox.CheckedChanged += SettingsChanged;
+        StartWithWindowsBox.CheckedChanged += SettingsChanged;
+        TestModeBox.CheckedChanged += SettingsChanged;
+        PlaySoundBox.CheckedChanged += UpdateSoundControlState;
 
         StatusLabel = new Label();
         StatusLabel.Text = DefaultStatus;
@@ -378,6 +425,42 @@ internal sealed class MainForm : Form
         }
     }
 
+    private void SettingsChanged(object sender, EventArgs e)
+    {
+        if (!LoadingSettings) UpdateSettingsState();
+    }
+
+    private void UpdateSettingsState()
+    {
+        if (SettingsChangeLabel == null || SaveSettingsButton == null) return;
+        bool changed = HasUnsavedSettings();
+        SaveSettingsButton.Enabled = changed;
+        SettingsChangeLabel.Text = changed ? "Unsaved changes" : "All changes saved";
+        SettingsChangeLabel.ForeColor = changed
+            ? Color.FromArgb(255, 196, 105)
+            : Color.FromArgb(150, 163, 181);
+    }
+
+    private bool HasUnsavedSettings()
+    {
+        return CountdownBox.Value != Config.CountdownSeconds
+            || !String.Equals(SoundPathBox.Text.Trim(), Config.SoundFile, StringComparison.Ordinal)
+            || PlaySoundBox.Checked != Config.PlaySound
+            || WaitSoundBox.Checked != Config.WaitForSound
+            || NotificationBox.Checked != Config.ShowNotification
+            || HotkeyBox.Checked != Config.EnableDesktopOnlyHotkey
+            || TrayStartBox.Checked != Config.StartInTray
+            || CloseToTrayBox.Checked != Config.CloseToTray
+            || StartWithWindowsBox.Checked != SavedStartWithWindows
+            || TestModeBox.Checked != Config.TestMode
+            || ScheduleMinutesBox.Value != Config.ScheduledDefaultMinutes;
+    }
+
+    private void UpdateSoundControlState(object sender, EventArgs e)
+    {
+        if (WaitSoundBox != null) WaitSoundBox.Enabled = PlaySoundBox.Checked;
+    }
+
     private void SaveSettings(object sender, EventArgs e)
     {
         if (!Config.ForceTestMode && Config.TestMode && !TestModeBox.Checked)
@@ -410,10 +493,12 @@ internal sealed class MainForm : Form
             Config.Save(AppResources.ConfigPath);
             settingsSaved = true;
             SetStartup(Config.StartWithWindows);
+            SavedStartWithWindows = StartWithWindowsBox.Checked;
             RegisterHotkeyIfNeeded(true);
             UpdateModeIndicator();
             UpdateTestModeHint(null, EventArgs.Empty);
             StatusLabel.Text = "Settings saved.";
+            UpdateSettingsState();
             Notify("Shutdown Utility Pro", "Settings saved successfully.");
         }
         catch (Exception ex)
@@ -424,6 +509,7 @@ internal sealed class MainForm : Form
                 TestModeBox.Checked = previousTestMode;
                 UpdateModeIndicator();
                 UpdateTestModeHint(null, EventArgs.Empty);
+                UpdateSettingsState();
             }
             Logger.Write("Save settings failed: " + ex);
             MessageBox.Show(this, "Could not save settings.\r\n\r\n" + ex.Message, "Settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -455,7 +541,7 @@ internal sealed class MainForm : Form
         Config.TestMode = fresh.TestMode;
         Config.ScheduledDefaultMinutes = fresh.ScheduledDefaultMinutes;
         ApplyConfigToUi();
-        try { Config.Save(AppResources.ConfigPath); SetStartup(false); RegisterHotkeyIfNeeded(true); UpdateModeIndicator(); StatusLabel.Text = "Safe defaults restored."; }
+        try { Config.Save(AppResources.ConfigPath); SetStartup(false); SavedStartWithWindows = false; RegisterHotkeyIfNeeded(true); UpdateModeIndicator(); UpdateTestModeHint(null, EventArgs.Empty); UpdateSettingsState(); StatusLabel.Text = "Safe defaults restored."; }
         catch (Exception ex)
         {
             Logger.Write("Reset settings failed: " + ex);
@@ -503,7 +589,8 @@ internal sealed class MainForm : Form
         TrayMenu.Items.Add("Cancel scheduled power action", null, delegate { CancelScheduledAction(null, EventArgs.Empty); });
         TrayMenu.Items.Add(new ToolStripSeparator());
         TrayMenu.Items.Add("Test sound", null, delegate { TestSound(null, EventArgs.Empty); });
-        TrayMenu.Items.Add("Open folder", null, delegate { OpenFolder(); });
+        TrayMenu.Items.Add("Open data folder", null, delegate { OpenFolder(); });
+        TrayMenu.Items.Add("Open application folder", null, delegate { OpenApplicationFolder(); });
         TrayMenu.Items.Add("View log", null, delegate { OpenLog(); });
         TrayMenu.Items.Add("About", null, delegate { ShowAbout(); });
         TrayMenu.Items.Add(new ToolStripSeparator());
@@ -601,7 +688,7 @@ internal sealed class MainForm : Form
     private void ShowAbout()
     {
         MessageBox.Show(this,
-            "Shutdown Utility Pro 3.1.1\r\n\r\n" +
+            "Shutdown Utility Pro 3.1.2\r\n\r\n" +
             (Config.TestMode ? "TEST MODE is enabled; no Windows power actions will run.\r\n" : "Windows power controls are enabled.\r\n") +
             "No forced application termination is used by default.\r\n\r\n" +
             "Folder:\r\n" + AppResources.BaseDir,
@@ -612,12 +699,32 @@ internal sealed class MainForm : Form
     {
         if (HotkeyId != 0) { try { NativeMethods.UnregisterHotKey(Handle, HotkeyId); } catch { } }
         if (Tray != null) { Tray.Visible = false; Tray.Dispose(); Tray = null; }
+        if (DashboardToolTip != null) { DashboardToolTip.Dispose(); DashboardToolTip = null; }
     }
 
     private void OpenFolder()
     {
-        try { Process.Start("explorer.exe", "\"" + AppResources.BaseDir + "\""); }
-        catch (Exception ex) { Logger.Write("Open folder failed: " + ex); }
+        OpenDirectory(AppResources.UserDataDir, "Open data folder");
+    }
+
+    private void OpenApplicationFolder()
+    {
+        OpenDirectory(AppResources.BaseDir, "Open application folder");
+    }
+
+    private void OpenDirectory(string path, string operation)
+    {
+        try
+        {
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            Process.Start("explorer.exe", "\"" + path + "\"");
+        }
+        catch (Exception ex)
+        {
+            Logger.Write(operation + " failed: " + ex);
+            MessageBox.Show(this, operation + " could not be opened.\r\n\r\n" + ex.Message,
+                "Shutdown Utility Pro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private void OpenLog()

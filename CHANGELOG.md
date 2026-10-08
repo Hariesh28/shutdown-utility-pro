@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 3.1.2 - 2026-10-08
+
+- Show whether settings have unsaved changes, disable Save when everything is up to date, add focused control guidance, and disable sound-wait options while sound playback is off.
+- Make the dashboard's **Open data folder** button and tray commands open their correctly named folders.
+- Trigger tagged release builds directly without an event-payload condition that could skip package publication.
+
 ## 3.1.1 - 2026-10-08
 
 - Refresh the dashboard with a modern card layout, consistent dark inputs, clearer spacing, and an emphasized primary action.
