@@ -1,0 +1,16 @@
+Shutdown Utility Pro examples
+
+artifacts\Shutdown.exe                 Open dashboard / interactive shutdown
+artifacts\Shutdown.exe /tray           Start in system tray
+artifacts\Shutdown.exe /restart 5      Restart after a 5-second countdown
+artifacts\Shutdown.exe /sleep 5        Sleep after a 5-second countdown
+artifacts\Shutdown.exe /hibernate 5    Hibernate after a 5-second countdown
+artifacts\Shutdown.exe /lock 3         Lock after a 3-second countdown
+artifacts\Shutdown.exe /cancel         Cancel Windows scheduled shutdown/restart
+artifacts\Shutdown.exe /test-sound     Play configured shutdown sound
+artifacts\Shutdown.exe --test-mode /shutdown 3  Simulate a shutdown without affecting Windows
+artifacts\Shutdown.exe /help           Show command-line help
+
+Native scheduled examples (run from PowerShell/CMD):
+artifacts\Shutdown.exe /tray
+Then use the tray menu to schedule shutdown/restart.

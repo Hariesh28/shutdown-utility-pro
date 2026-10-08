@@ -1,0 +1,30 @@
+# Build products
+/Shutdown.exe
+/Shutdown.build.exe
+/Shutdown.pdb
+/artifacts/
+/bin/
+/obj/
+
+# Runtime data (user data is stored in Local AppData)
+/Shutdown.log
+/Shutdown.log.old
+/WindowState.txt
+*.tmp
+
+# User-provided/local assets
+/Shutdown.ico
+
+# IDE and operating-system files
+.idea/
+.idea/workspace.xml
+.idea/httpRequests/
+.idea/queries/
+.idea/dataSources/
+.idea/dataSources.local.xml
+.vs/
+.vscode/
+*.user
+*.suo
+Thumbs.db
+Desktop.ini

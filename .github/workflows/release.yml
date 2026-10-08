@@ -1,0 +1,50 @@
+name: Build and publish release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Build application
+        shell: cmd
+        run: Build.cmd /nopause
+
+      - name: Run regression tests
+        shell: cmd
+        run: tests\ShutdownUtility.Tests\RunTests.cmd
+
+      - name: Package distributable and checksum
+        shell: pwsh
+        run: |
+          $archiveName = "ShutdownUtilityPro-$env:RELEASE_TAG-windows.zip"
+          $archivePath = Join-Path $env:RUNNER_TEMP $archiveName
+          $checksumPath = "$archivePath.sha256"
+          Compress-Archive -Path "artifacts\*" -DestinationPath $archivePath
+          $hash = (Get-FileHash -Path $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $archiveName" | Set-Content -Path $checksumPath -Encoding ascii
+          "ARCHIVE_PATH=$archivePath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "CHECKSUM_PATH=$checksumPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+
+      - name: Publish GitHub release
+        shell: pwsh
+        run: |
+          gh release create "$env:RELEASE_TAG" "$env:ARCHIVE_PATH" "$env:CHECKSUM_PATH" `
+            --verify-tag `
+            --generate-notes `
+            --title "Shutdown Utility Pro $env:RELEASE_TAG"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}

@@ -1,0 +1,46 @@
+name: Windows build and tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Build application
+        shell: cmd
+        run: Build.cmd /nopause
+
+      - name: Verify distributable layout
+        shell: pwsh
+        run: |
+          $required = @(
+            "artifacts\Shutdown.exe",
+            "artifacts\Shutdown.config",
+            "artifacts\Shutdown.wav"
+          )
+          foreach ($path in $required) {
+            if (-not (Test-Path -LiteralPath $path)) {
+              throw "Build output is missing: $path"
+            }
+          }
+          if (-not (Select-String -Path "artifacts\Shutdown.config" -Pattern "^TestMode=true$" -Quiet)) {
+            throw "The distributable configuration must default to Test mode."
+          }
+
+      - name: Run regression tests
+        shell: cmd
+        run: tests\ShutdownUtility.Tests\RunTests.cmd
